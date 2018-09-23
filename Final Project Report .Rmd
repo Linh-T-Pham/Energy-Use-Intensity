@@ -1,0 +1,78 @@
+title: "SF Energy Benchmakring in 2013"
+author: "Linh T. Pham"" 
+date: "September 3rd, 2018"
+---
+# Problem Setup 
+Energy use intensity (EUI) is defined as energy per square foot per year. It’s calculated by dividing the total energy consumed by the building in one year (measured in kBtu) by the total gross floor area of the building. A low EUI indicates good energy performance.
+
+This project will focus on the analysis of EUI in different San Francisco municipal facilities. EUI is the primary method of benchmarking the facilities. 
+
+library(dplyr)
+library(tools)
+library(readr)
+library(ggplot2)
+
+sf <- read.csv('SF Energy Benchmarking .csv')
+
+# Data Cleaning
+N/A” shows a facility type not eligible for a rating, or that inadequate information is available. “N.Q.” indicates the facility is an eligible category but does not qualify for a rating based on EPA’s operating thresholds. 
+
+sf <- rename(sf, Building.Area.sq.ft = X2013.Building.Area..sq..ft..)
+sf <- rename(sf, EUI.kBTU.sq.ft = X2013.Site.EUI..kBtu.sq.ft..)
+sf <- rename(sf, Building.Category = General.Building.Category)
+sf <- rename(sf, Energy.Star.Rating = X2013.ENERGY.STAR.rating)
+
+sf <- mutate(sf, SFPUC.Code = na_if(SFPUC.Code, 'XXX'))
+sf <- mutate(sf, Energy.Star.Rating = na_if(Energy.Star.Rating, ''))
+
+sf <- mutate(sf, Facility.Type = toTitleCase(Facility.Type))
+is.na(sf$Energy.Star.Rating)
+
+# Box Plot
+
+boxplot(EUI.kBTU.sq.ft ~ Building.Category, ylab='EUI', xlab='Building Category', main='EUI of Different Building Categories', data = sf) 
+
+All the buildings have less than 700 EUI kBTU.sq.ft. The offices category has the lowest mean relative EUI. The public safety has more outliners comparing to other categories. The airport mean relative EUI varies much less than that of other caterogries. The airport's more consitent mean relative EUI should make the prediction more dependable than other caterogries. 
+# Linear model 
+Model 1 shows that Year.Built almost significanly contributes to EUI. Year built and EU has negative linear relationship. 
+model1 = lm(EUI.kBTU.sq.ft ~ Year.Built, data = sf)  
+model1
+abline(model1, col="red")
+summary(model1)
+
+Model 3 shows that Building Category: Hospital contributes signficantly to EUI.
+The area of a building can impact on energy consumption. From the finding, the airport has the largest area but it produces less EUI than other building categories. This indicates that the airport has met its energy performance.  
+
+model3 = lm(EUI.kBTU.sq.ft ~ Year.Built + Building.Category + Building.Area.sq.ft, data = sf) 
+model3
+summary(model3)
+
+# ggplot2
+ggplot(sf, aes(x = Year.Built, y = EUI.kBTU.sq.ft)) + 
+  theme_bw()+
+  geom_point()+
+  labs(y = "EUI", x = "Year Built", title = "Year Built vs EUI in 2013")
+
+Building’s age is also contributing to EUI’s level. The oldest building (GGP—Murphy Millwright’s Cottage) generates the highest amount of EUI. 
+
+# Box Plot 
+boxplot(EUI.kBTU.sq.ft ~ Building.Category, data = sf)
+boxplot(EUI.kBTU.sq.ft ~ Building.Category, ylab='EUI', xlab='Building Category', main='EUI of Different Building Categories', data = sf) 
+
+The plot shows that the public safety has low median and uneven distribution. In the public safety category,there are many buildings which have values outside the limit. Hospital category has the most even distribution, but EUI is relatively high comparing to others.  
+
+Parking Building in Recreation Facility produced the highest EUI which is more tha 600 EUI  
+View(filter(sf, EUI.kBTU.sq.ft > 600))
+
+Pool in Recreation Facility produced more than 400 EUI 
+View(filter(sf, EUI.kBTU.sq.ft > 400))
+
+On the observation, Recreation Facility produces higher EUI, which range from 300-600 EUI. 
+
+# Conclusions and Recommendations 
+San Francisco should continue approaching to benchmarking the energy use of its portfolio of buildings. Benchmarking will help the city identify which building category tends to have higher EUI as well as which buildings are outliner among their peers. 
+
+1.	The city should also renovate more old buildings in all categories because the building age has increased EUI significantly. 
+
+2.	It is challenging to implement the process of energy benchmarking due to the difficulty and accuracy in data collection. However, with more effective effort to collect data, the better benchmarking reports will be produced going forward 
+
